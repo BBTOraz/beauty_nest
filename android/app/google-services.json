@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "720516406515",
+    "project_id": "beauty-nest-a9636",
+    "storage_bucket": "beauty-nest-a9636.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720516406515:android:c718d5c65820d0fe762b86",
+        "android_client_info": {
+          "package_name": "com.example.beauty_nest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb-37ZKkYzXLSdKviB23Ccr9xtTvSHAj4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
