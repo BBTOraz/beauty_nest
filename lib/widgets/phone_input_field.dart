@@ -52,7 +52,7 @@ class PhoneInputField extends StatelessWidget {
               if (value == null || value.isEmpty) {
                 return 'Введите номер телефона';
               }
-              // Дополнительная валидация (например, длина номера) при необходимости
+              //todo Дополнительная валидация: длина номера
               return null;
             },
           ),

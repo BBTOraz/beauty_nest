@@ -18,6 +18,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
+  //todo Вынести список городов в отдельный файл
   String _selectedCity = 'Алматы';
   final List<String> _cities = ['Алматы', 'Астана'];
 
@@ -48,6 +49,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  //todo валидацию вынести отдельно
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);

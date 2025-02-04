@@ -17,12 +17,16 @@ class AuthViewModel extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+
   UserModel? _userModel;
   UserModel? get userModel => _userModel;
 
   AuthViewModel() {
     FirebaseAuth.instance.authStateChanges().listen((User? user) async {
       _user = user;
+      _isInitialized = true;
       if (_user != null) {
         await loadUserData();
       }
@@ -31,14 +35,12 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<void> loadUserData() async {
-    if (_user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_user!.uid)
-          .get();
-      if (doc.exists) {
-        _userModel = UserModel.fromFirestore(doc);
-      }
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_user!.uid)
+        .get();
+    if (doc.exists) {
+      _userModel = UserModel.fromFirestore(doc);
     }
   }
 

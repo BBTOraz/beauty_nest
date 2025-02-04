@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         builder: (context, authViewModel, _) {
           final router = createRouter(authViewModel);
           return MaterialApp.router(
-            title: 'Beauty Salon Booking',
+            title: 'Beauty Nest',
             theme: AppTheme.lightTheme,
             routerConfig: router,
             debugShowCheckedModeBanner: false,
