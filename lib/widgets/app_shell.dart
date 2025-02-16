@@ -1,3 +1,4 @@
+import 'package:beauty_nest/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'custom_top_app_bar.dart';
@@ -31,26 +32,30 @@ class _AppShellState extends State<AppShell> {
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.home),
         title: "Главное",
-        activeColorPrimary: Colors.blue,
-        inactiveColorPrimary: Colors.grey,
+        activeColorPrimary: AppColors.primaryContainer,
+        activeColorSecondary: AppColors.onPrimaryContainer,
+        inactiveColorPrimary: AppColors.onPrimaryContainer,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.person),
         title: "Стилисты",
-        activeColorPrimary: Colors.teal,
-        inactiveColorPrimary: Colors.grey,
+        activeColorPrimary: AppColors.primaryContainer,
+        activeColorSecondary: AppColors.onPrimaryContainer,
+        inactiveColorPrimary: AppColors.onPrimaryContainer,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.calendar_today),
         title: "Запись",
-        activeColorPrimary: Colors.deepOrange,
-        inactiveColorPrimary: Colors.grey,
+        activeColorPrimary: AppColors.primaryContainer,
+        activeColorSecondary: AppColors.onPrimaryContainer,
+        inactiveColorPrimary: AppColors.onPrimaryContainer,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.local_offer),
         title: "Акции",
-        activeColorPrimary: Colors.purple,
-        inactiveColorPrimary: Colors.grey,
+        activeColorPrimary: AppColors.primaryContainer,
+        activeColorSecondary: AppColors.onPrimaryContainer,
+        inactiveColorPrimary: AppColors.onPrimaryContainer,
       ),
     ];
   }

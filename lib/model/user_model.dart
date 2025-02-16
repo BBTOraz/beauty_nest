@@ -7,6 +7,7 @@ class UserModel {
   final String lastName;
   final String city;
   final String phone;
+  final String address;
 
   UserModel({
     required this.uid,
@@ -15,6 +16,7 @@ class UserModel {
     required this.lastName,
     required this.city,
     required this.phone,
+    required this.address,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -25,7 +27,8 @@ class UserModel {
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
       city: data['city'] ?? '',
-      phone: data['phone'] ?? ''
+      phone: data['phone'] ?? '',
+      address: data['address'] ?? '',
     );
   }
 
@@ -35,7 +38,8 @@ class UserModel {
       'firstName': firstName,
       'lastName': lastName,
       'city': city,
-      'phone': phone
+      'phone': phone,
+      'address': address,
     };
   }
 }

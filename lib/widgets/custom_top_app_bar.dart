@@ -1,3 +1,4 @@
+import 'package:beauty_nest/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -11,11 +12,11 @@ class CustomTopAppBar extends StatelessWidget implements PreferredSizeWidget {
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
     return AppBar(
       leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        // Логотип – замените путь на актуальный
-        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+        padding: const EdgeInsets.all(1.0),
+        child: Image.asset('assets/logo.png', fit: BoxFit.contain,),
       ),
-      title: const Text('Beauty Salon'),
+      title: const Text('Beauty Nest'),
+      backgroundColor: AppColors.primaryContainer,
       actions: [
         IconButton(
           icon: const Icon(Icons.logout),

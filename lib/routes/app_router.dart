@@ -3,7 +3,6 @@ import 'package:beauty_nest/widgets/app_shell.dart';
 import 'package:go_router/go_router.dart';
 import '../views/login_screen.dart';
 import '../views/registration_screen.dart';
-import '../views/main_screen.dart';
 import '../viewmodels/auth_view_model.dart';
 import '../views/splash_screen.dart';
 

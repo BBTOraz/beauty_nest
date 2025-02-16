@@ -1,10 +1,13 @@
+import 'package:beauty_nest/widgets/branches_carousel.dart';
+import 'package:beauty_nest/widgets/list_of_service.dart';
 import 'package:flutter/material.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../app_theme.dart';
 import '../viewmodels/auth_view_model.dart';
 import '../widgets/custom_snackbar.dart';
-import '../widgets/uncotained_carousel.dart';
+import '../widgets/pro_care_list.dart';
+import '../widgets/uncotained_discount_carousel.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,9 +16,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-
   bool _welcomeShown = false;
-
 
   @override
   void didChangeDependencies() {
@@ -23,19 +24,28 @@ class _MainScreenState extends State<MainScreen> {
     final authVM = Provider.of<AuthViewModel>(context);
     if (!_welcomeShown && authVM.userModel != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showCustomSnackBar(context, 'Добро пожаловать, ${authVM.userModel!.firstName}!', SnackbarType.success);
+        showCustomSnackBar(
+            context,
+            'Добро пожаловать, ${authVM.userModel!.firstName}!',
+            SnackbarType.success);
       });
       _welcomeShown = true;
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final authVM = Provider.of<AuthViewModel>(context);
     return Scaffold(
-      body: Center(
-        child: UncontainedCarouselWidget(),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const DiscountCarouselWidget(),
+            const ServicesNavigationBar(),
+            const ProCareListWidget(),
+            const BranchesCarouselWidget(),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,5 @@
 
-import 'package:beauty_nest/viewmodels/user_model.dart';
+import 'package:beauty_nest/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -44,6 +44,14 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> updateAddress(String newAddress) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_user!.uid)
+        .update({'address': newAddress});
+    await loadUserData();
+  }
+
   Future<void> loginWithPhone(String phone, String password) async {
     _setLoading(true);
     try {
@@ -81,6 +89,7 @@ class AuthViewModel extends ChangeNotifier {
           lastName: lastName,
           phone: phone,
           city: city,
+          address: '',
         );
         await FirebaseFirestore.instance
             .collection('users')

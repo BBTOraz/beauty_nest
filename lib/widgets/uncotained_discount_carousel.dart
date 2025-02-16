@@ -1,8 +1,9 @@
+import 'package:beauty_nest/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:m3_carousel/m3_carousel.dart';
 
-class UncontainedCarouselWidget extends StatelessWidget {
-  const UncontainedCarouselWidget({super.key});
+class DiscountCarouselWidget extends StatelessWidget {
+  const DiscountCarouselWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -61,14 +62,12 @@ class _CarouselItem extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-
         Image.asset(
           image,
           fit: BoxFit.cover,
         ),
-
         Container(
-          color: Colors.black.withOpacity(0.4),
+          color: AppColors.overlay,
         ),
         Positioned(
           top: -offset,
@@ -82,8 +81,8 @@ class _CarouselItem extends StatelessWidget {
                 center: Alignment.center,
                 radius: 1.2,
                 colors: [
-                  const Color(0xFFFF8BC8),
-                  const Color(0xFFFFBBD8).withAlpha(0),
+                  AppColors.primaryContainer,
+                  AppColors.onPrimaryContainer.withAlpha(0),
                 ],
                 stops: const [0.0, 0.4],
               ),
@@ -100,15 +99,15 @@ class _CarouselItem extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
+                  fontSize: 18,
+                  color: AppColors.onPrimary
                 ),
               ),
               Text(
                 'Скидка $discount',
                 style: const TextStyle(
                   fontSize: 28,
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
