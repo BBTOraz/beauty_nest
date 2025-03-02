@@ -226,7 +226,7 @@ class _SpecialistTab extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 3,
           child: ListTile(
-            leading: CircleAvatar(backgroundImage: AssetImage(spec['photo']!.toString() )),
+            leading: CircleAvatar(backgroundImage: AssetImage(spec['photo']! as String)),
             title: Text(spec['name']!.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Row(
               children: [

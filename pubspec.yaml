@@ -48,6 +48,8 @@ dependencies:
   timeline_tile: ^2.0.0
   board_datetime_picker: ^2.4.1
   checkout_screen_ui: ^1.0.1
+  flutter_rating_bar: ^4.0.1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

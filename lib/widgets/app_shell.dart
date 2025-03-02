@@ -1,6 +1,8 @@
 import 'package:beauty_nest/app_theme.dart';
+import 'package:beauty_nest/model/stylist.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import '../model/stylist.dart';
 import 'custom_top_app_bar.dart';
 import '../views/main_screen.dart';
 import '../views/stylists_screen.dart';
@@ -17,13 +19,12 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   final PersistentTabController _controller =
   PersistentTabController(initialIndex: 0);
-
   List<Widget> _buildScreens() {
-    return const [
-      MainScreen(),
-      StylistsScreen(),
-      BookingScreen(),
-      OffersScreen(),
+    return [
+      const MainScreen(),
+      StylistsListScreen(),
+      const BookingScreen(),
+      const OffersScreen(),
     ];
   }
 
