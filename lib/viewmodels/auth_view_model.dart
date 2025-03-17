@@ -113,4 +113,5 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = value;
     notifyListeners();
   }
+
 }

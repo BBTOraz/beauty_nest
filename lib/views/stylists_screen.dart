@@ -1,9 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../enum/sort_options.dart';
 import '../model/stylist.dart';
 import '../repositories/stylist_repository.dart';
 import '../services/stylist_service.dart';
+import '../utils/minPrice.dart';
+import '../viewmodels/auth_view_model.dart';
 import '../views/stylist_details_screen.dart';
 
 class StylistsListScreen extends StatefulWidget {
@@ -17,13 +22,52 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
   String _searchQuery = '';
   String _selectedSpecialization = 'Все';
   bool _onlyAvailableNow = false;
-  final List<String> _specializations = ['Все', 'Стрижки', 'Окрашивание', 'Укладка', 'Макияж'];
+  double _selectedMinRating = 0.0;
+  RangeValues _priceRange = const RangeValues(0, 10000);
+  bool _showOnlyWithPhoto = false;
+  SortOption? _sortOption;
+
+  final List<String> _specializations = [
+    'Стрижки',
+    'Окрашивание',
+    'Укладка',
+    'Химическая завивка',
+    'Восстановительные процедуры',
+    'Маникюр',
+    'Педикюр',
+    'Дизайн ногтей',
+    'Чистка лица',
+    'Пилинги',
+    'Маски',
+    'Мезотерапия',
+    'Инъекции',
+    'Лазерные процедуры',
+    'Депиляция (восковая)',
+    'Депиляция (шугаринг)',
+    'Депиляция (лазерная)',
+    'Депиляция (электроэпиляция)',
+    'Макияж (дневной)',
+    'Макияж (вечерний)',
+    'Макияж (свадебный)',
+    'Макияж (пробный)',
+    'Макияж (перманентный)',
+    'Уход за бровями и ресницами',
+    'Коррекция бровей',
+    'Оформление бровей',
+    'Окрашивание бровей',
+    'Ламинирование',
+    'Наращивание ресниц',
+    'Уход за телом',
+    'Массаж',
+    'SPA-процедуры',
+    'Обертывания',
+    'Консультации стилиста',
+  ];
   final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Load stylists when screen is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<StylistService>(context, listen: false).loadStylists();
     });
@@ -35,28 +79,82 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
     super.dispose();
   }
 
-  // Имитация фильтрации
   List<Stylist> filteredStylists(List<Stylist> stylists) {
-    return stylists.where((stylist) {
-      // Поиск по имени или фамилии
-      bool matchesSearch = _searchQuery.isEmpty ||
+    List<Stylist> result = stylists.where((stylist) {
+      final matchesSearch = _searchQuery.isEmpty ||
           stylist.firstName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           stylist.lastName.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      // Фильтр по специализации
-      bool matchesSpecialization = _selectedSpecialization == 'Все' ||
+      // 2. По специализации
+      final matchesSpecialization = _selectedSpecialization == 'Все' ||
           stylist.specialization == _selectedSpecialization;
 
-      // Фильтр по доступности (просто для примера, на практике нужна реальная логика)
-      bool matchesAvailability = !_onlyAvailableNow || stylist.isAvailable! ?? false;
+      // 3. Свободны сегодня
+      final matchesAvailability = !_onlyAvailableNow || (stylist.isAvailable ?? false);
 
-      return matchesSearch && matchesSpecialization && matchesAvailability;
+      // 4. Рейтинг
+      final matchesRating = stylist.rating >= _selectedMinRating;
+
+      // 5. Есть ли хотя бы одна услуга в нужном ценовом диапазоне?
+      //    Допустим, в stylist.services есть Service.price
+      bool matchesPrice = false;
+      for (final service in stylist.services) {
+        if (service.price >= _priceRange.start && service.price <= _priceRange.end) {
+          matchesPrice = true;
+          break;
+        }
+      }
+
+      // 6. Фото работ (например, если portfolioImages не пуст)
+      final matchesPhoto = !_showOnlyWithPhoto || stylist.portfolioImages.isNotEmpty;
+
+      return matchesSearch
+          && matchesSpecialization
+          && matchesAvailability
+          && matchesRating
+          && matchesPrice
+          && matchesPhoto;
     }).toList();
+
+    switch (_sortOption) {
+      case SortOption.ratingDesc:
+      // Сначала самые высокие рейтинги
+        result.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+
+      case SortOption.priceAsc:
+      // Сортируем по минимальной цене услуги. Нужно определить функцию getMinPrice(stylist)
+        result.sort((a, b) => getMinPrice(a).compareTo(getMinPrice(b)));
+        break;
+
+      case SortOption.availability:
+      // Например, доступных (true) ставим в начало
+      // isAvailable == true → 1, false → 0, и сравниваем в обратном порядке
+        result.sort((a, b) {
+          int valA = (a.isAvailable == true) ? 1 : 0;
+          int valB = (b.isAvailable == true) ? 1 : 0;
+          return valB.compareTo(valA);
+        });
+        break;
+
+      case SortOption.reviewsDesc:
+      // У кого больше commentCount, тот выше
+        result.sort((a, b) => b.commentCount.compareTo(a.commentCount));
+        break;
+
+    // Если _sortOption может быть null или ещё что-то
+      default:
+        break;
+    }
+
+    return result;
   }
+
 
   @override
   Widget build(BuildContext context) {
     final stylistService = Provider.of<StylistService>(context);
+    print(stylistService.stylists);
     final List<Stylist> allStylists = stylistService.stylists;
     final bool isLoading = stylistService.isLoading;
     final String? error = stylistService.error;
@@ -143,7 +241,8 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                       });
                     },
                   ),
-                  for (final specialization in _specializations.where((s) => s != 'Все'))
+                  for (final specialization in _specializations.where((
+                      s) => s != 'Все'))
                     _buildFilterChip(
                       label: specialization,
                       isSelected: _selectedSpecialization == specialization,
@@ -203,7 +302,8 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const Icon(
+                        Icons.error_outline, size: 64, color: Colors.red),
                     const SizedBox(height: 16),
                     const Text(
                       'Ошибка загрузки данных',
@@ -218,7 +318,8 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        Provider.of<StylistService>(context, listen: false).loadStylists();
+                        Provider.of<StylistService>(context, listen: false)
+                            .loadStylists();
                       },
                       child: const Text('Повторить'),
                     ),
@@ -247,9 +348,10 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                   : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: stylists.length,
-                itemBuilder: (context, index) => ImprovedStylistCard(
-                  stylist: stylists[index],
-                ),
+                itemBuilder: (context, index) =>
+                    ImprovedStylistCard(
+                      stylist: stylists[index],
+                    ),
               ),
             ),
           ],
@@ -333,10 +435,9 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                   ),
                 ),
                 const Divider(height: 30),
-                const Text(
-                  'Услуги',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+
+                // 1. Фильтр "Услуги" (как и было)
+                const Text('Услуги', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -356,16 +457,16 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                     );
                   }).toList(),
                 ),
+
                 const SizedBox(height: 20),
-                const Text(
-                  'Рейтинг',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+
+                // 2. Фильтр по рейтингу (минимальный рейтинг)
+                const Text('Рейтинг', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [4, 4.5, 4.8].map((rating) {
+                  children: [4.0, 4.5, 4.8].map((rating) {
                     return FilterChip(
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -374,37 +475,61 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                           Text(' $rating+'),
                         ],
                       ),
-                      selected: false, // Логика выбора рейтинга
+                      selected: _selectedMinRating == rating, // _selectedMinRating - переменная в State
                       onSelected: (selected) {
-                        // Логика фильтрации по рейтингу
+                        setModalState(() {
+                          // если выбираем — ставим рейтинг, если снимаем выбор — обнуляем
+                          _selectedMinRating = selected ? rating : 0.0;
+                        });
+                        setState(() {
+                          _selectedMinRating = selected ? rating : 0.0;
+                        });
                       },
                     );
                   }).toList(),
                 ),
+
                 const SizedBox(height: 20),
-                const Text(
-                  'Стоимость услуг',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+
+                // 3. Фильтр по стоимости услуг (RangeSlider)
+                const Text('Стоимость услуг', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
                 RangeSlider(
-                  values: const RangeValues(1000, 5000),
+                  values: _priceRange, // _priceRange - переменная типа RangeValues
                   min: 0,
                   max: 10000,
                   divisions: 20,
-                  labels: const RangeLabels('1000₽', '5000₽'),
+                  labels: RangeLabels(
+                    '${_priceRange.start.round()}₽',
+                    '${_priceRange.end.round()}₽',
+                  ),
                   onChanged: (values) {
-                    // Логика фильтрации по цене
+                    setModalState(() {
+                      _priceRange = values;
+                    });
+                    setState(() {
+                      _priceRange = values;
+                    });
                   },
                 ),
+
                 const SizedBox(height: 20),
+
+                // 4. Фильтр "Показать только с фото работ"
                 SwitchListTile(
                   title: const Text('Показать только с фото работ'),
-                  value: true, // Логика переключения
-                  onChanged: (_) {
-                    // Логика фильтрации
+                  value: _showOnlyWithPhoto, // _showOnlyWithPhoto - bool
+                  onChanged: (value) {
+                    setModalState(() {
+                      _showOnlyWithPhoto = value;
+                    });
+                    setState(() {
+                      _showOnlyWithPhoto = value;
+                    });
                   },
                 ),
+
+                // 5. Свободны сегодня (уже было, но добавили setModalState)
                 SwitchListTile(
                   title: const Text('Свободны сегодня'),
                   value: _onlyAvailableNow,
@@ -417,7 +542,10 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                     });
                   },
                 ),
+
                 const SizedBox(height: 24),
+
+                // Кнопки "Сбросить" и "Применить"
                 Row(
                   children: [
                     Expanded(
@@ -427,10 +555,16 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                           setModalState(() {
                             _selectedSpecialization = 'Все';
                             _onlyAvailableNow = false;
+                            _selectedMinRating = 0.0;
+                            _priceRange = const RangeValues(0, 10000);
+                            _showOnlyWithPhoto = false;
                           });
                           setState(() {
                             _selectedSpecialization = 'Все';
                             _onlyAvailableNow = false;
+                            _selectedMinRating = 0.0;
+                            _priceRange = const RangeValues(0, 10000);
+                            _showOnlyWithPhoto = false;
                           });
                         },
                         child: const Text('Сбросить'),
@@ -441,6 +575,8 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
+                          // После закрытия окна — фильтрация уже будет
+                          // учтена в filteredStylists(), если вы её используете.
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.pink,
@@ -457,6 +593,7 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
       ),
     );
   }
+
 
   void _showSortOptions(BuildContext context) {
     showModalBottomSheet(
@@ -477,36 +614,52 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 1) Сортировка по рейтингу (высокий → низкий)
             ListTile(
               leading: const Icon(Icons.star, color: Colors.amber),
               title: const Text('По рейтингу (высокий → низкий)'),
               onTap: () {
                 Navigator.pop(context);
-                // Логика сортировки
+                setState(() {
+                  _sortOption = SortOption.ratingDesc;
+                });
               },
             ),
+
+            // 2) Сортировка по цене (низкая → высокая)
             ListTile(
               leading: const Icon(Icons.price_change, color: Colors.green),
               title: const Text('По цене (низкая → высокая)'),
               onTap: () {
                 Navigator.pop(context);
-                // Логика сортировки
+                setState(() {
+                  _sortOption = SortOption.priceAsc;
+                });
               },
             ),
+
+            // 3) По доступности (сначала доступные)
             ListTile(
               leading: const Icon(Icons.access_time, color: Colors.blue),
               title: const Text('По доступности (ближайшее время)'),
               onTap: () {
                 Navigator.pop(context);
-                // Логика сортировки
+                setState(() {
+                  _sortOption = SortOption.availability;
+                });
               },
             ),
+
+            // 4) По количеству отзывов (много → мало)
             ListTile(
               leading: const Icon(Icons.rate_review, color: Colors.purple),
               title: const Text('По количеству отзывов'),
               onTap: () {
                 Navigator.pop(context);
-                // Логика сортировки
+                setState(() {
+                  _sortOption = SortOption.reviewsDesc;
+                });
               },
             ),
           ],
@@ -515,17 +668,23 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
     );
   }
 
+
   void _showQuickBookingOptions(BuildContext context) {
-    // Получаем список доступных стилистов
-    final List<Stylist> availableStylists = static_stylists.where((stylist) => stylist.isAvailable ?? false).toList();
+    final authVM = Provider.of<AuthViewModel>(context, listen: false);
+    final stylistService = Provider.of<StylistService>(context, listen: false);
+    final List<Stylist> availableStylists =
+    stylistService.stylists.where((stylist) => stylist.isAvailable ?? false).toList();
+    final List<String> services =
+    _specializations.where((s) => s != 'Все').toList();
+    String selectedService = services.isNotEmpty ? services[0] : '';
 
-    // Определяем список услуг для выбора
-    final List<String> services = _specializations.where((s) => s != 'Все').toList();
-    String selectedService = services[0]; // По умолчанию первая услуга
+    final List<String> timeSlots =
+    List.generate(8, (index) => '${10 + index}:00');
+    String selectedTimeSlot = timeSlots.isNotEmpty ? timeSlots[0] : '';
 
-    // Создаем список доступных временных слотов (пример)
-    final List<String> timeSlots = List.generate(8, (index) => '${10 + index}:00');
-    String selectedTimeSlot = timeSlots[0]; // По умолчанию первый временной слот
+    // Выбираем любого стилиста по умолчанию (если есть)
+    Stylist? selectedStylist =
+    availableStylists.isNotEmpty ? availableStylists[0] : null;
 
     showModalBottomSheet(
       context: context,
@@ -534,164 +693,278 @@ class _StylistsListScreenState extends State<StylistsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.all(20),
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: Text(
-                  'Запись на сегодня',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const Divider(height: 30),
-              const Text(
-                'Свободные стилисты сегодня',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: availableStylists.length,
-                  itemBuilder: (context, index) {
-                    final stylist = availableStylists[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.grey[300],
-                            backgroundImage: AssetImage(stylist.photo),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${stylist.firstName} ${stylist.lastName[0]}.',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.star, color: Colors.amber, size: 14),
-                              const SizedBox(width: 2),
-                              Text('${stylist.rating.toStringAsFixed(2)}',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-                            ],
-                          ),
-                        ],
+        builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            // Высота 70% экрана, можно регулировать
+            height: MediaQuery.of(context).size.height * 0.7,
+            // Для прокрутки всего содержимого оборачиваем в SingleChildScrollView
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Запись на сегодня',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Выберите услугу',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: services.map((service) => ChoiceChip(
-                  label: Text(service),
-                  selected: selectedService == service,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setModalState(() {
-                        selectedService = service;
-                      });
-                    }
-                  },
-                )).toList(),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Выберите время',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 50,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: timeSlots.length,
-                  itemBuilder: (context, index) {
-                    final timeSlot = timeSlots[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(timeSlot),
-                        selected: selectedTimeSlot == timeSlot,
-                        backgroundColor: Colors.grey[200],
-                        selectedColor: Colors.pink,
-                        labelStyle: TextStyle(
-                          color: selectedTimeSlot == timeSlot ? Colors.white : Colors.black87,
-                        ),
+                    ),
+                  ),
+                  const Divider(height: 30),
+                  const Text(
+                    'Свободные стилисты сегодня',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 125,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: availableStylists.length,
+                      itemBuilder: (context, index) {
+                        final stylist = availableStylists[index];
+                        final bool isSelected = selectedStylist == stylist;
+                        return GestureDetector(
+                          onTap: () {
+                            setModalState(() {
+                              selectedStylist = stylist;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? Colors.pink : Colors.transparent,
+                                width: 2,
+                              ),
+                              color: isSelected ? Colors.pink.withOpacity(0.1) : Colors.transparent,
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              children: [
+                                Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: Colors.grey[300],
+                                      backgroundImage: AssetImage(stylist.photo),
+                                    ),
+                                    if (isSelected)
+                                      Positioned(
+                                        right: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.pink,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 2),
+                                          ),
+                                          child: const Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${stylist.firstName} ${stylist.lastName[0]}.',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? Colors.pink : Colors.black,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      stylist.rating.toStringAsFixed(2),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isSelected ? Colors.pink[700] : Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Выберите услугу',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: services.map((service) {
+                      return ChoiceChip(
+                        label: Text(service),
+                        selected: selectedService == service,
                         onSelected: (selected) {
                           if (selected) {
                             setModalState(() {
-                              selectedTimeSlot = timeSlot;
+                              selectedService = service;
                             });
                           }
                         },
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Логика записи с использованием выбранных данных
-                    final selectedStylist = availableStylists.isNotEmpty ? availableStylists[0] : null;
-
-                    Navigator.pop(context);
-
-                    if (selectedStylist != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Вы успешно записаны к ${selectedStylist.firstName} на $selectedService в $selectedTimeSlot!'
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
                       );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Выберите время',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 50,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: timeSlots.length,
+                      itemBuilder: (context, index) {
+                        final timeSlot = timeSlots[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(timeSlot),
+                            selected: selectedTimeSlot == timeSlot,
+                            backgroundColor: Colors.grey[200],
+                            selectedColor: Colors.pink,
+                            labelStyle: TextStyle(
+                              color: selectedTimeSlot == timeSlot
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setModalState(() {
+                                  selectedTimeSlot = timeSlot;
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  child: const Text(
-                    'Записаться',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 24),
+                  // Кнопка "Записаться"
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // 1. Валидация: проверяем, выбраны ли услуга и время
+                        if (selectedService.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Выберите услугу'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+                        if (selectedTimeSlot.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Выберите время'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final now = DateTime.now();
+                        final dateString =
+                        DateFormat('dd-MM-yyyy').format(now);
+
+                        final bookingData = {
+                          'userId': authVM.user?.uid ?? '',
+                          'service': selectedService,
+                          'selectedTime': selectedTimeSlot,
+                          'selectedDate': DateFormat('yyyy-MM-dd').format(DateTime.now().add(Duration(days: 1))).toString(),
+                          'bookingTimestamp': Timestamp.now(),
+                          'stylistName': selectedStylist != null
+                              ? '${selectedStylist!.firstName} ${selectedStylist!.lastName}'
+                              : '',
+                        };
+
+                        try {
+                          // Записываем в коллекцию bookings -> документ dateString
+                          // set(..., SetOptions(merge: true)) чтобы не перетирать данные, если док уже есть
+                          await FirebaseFirestore.instance
+                              .collection('bookings')
+                              .doc(dateString)
+                              .set(bookingData, SetOptions(merge: true));
+
+                          if (authVM.user != null) {
+                            final userRef = FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(authVM.user!.uid);
+
+                            // Пример - добавляем в массив "bookings"
+                            await userRef.update({
+                              'bookings': FieldValue.arrayUnion([bookingData])
+                            });
+                          }
+
+                          // Успешное бронирование
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Запись оформлена: ${selectedStylist?.firstName ?? ''} на $selectedService в $selectedTimeSlot'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Ошибка записи: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Записаться',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class ImprovedStylistCard extends StatelessWidget {
+  class ImprovedStylistCard extends StatelessWidget {
   final Stylist stylist;
 
   const ImprovedStylistCard({super.key, required this.stylist});
@@ -787,7 +1060,7 @@ class ImprovedStylistCard extends StatelessWidget {
                         const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          '${stylist.rating.toStringAsFixed(2)}',
+                          stylist.rating.toStringAsFixed(2),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -803,7 +1076,7 @@ class ImprovedStylistCard extends StatelessWidget {
                         Icon(Icons.chat_bubble_outline, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
-                          '${stylist.commentCount}',
+                          '${stylist.comments.length}',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,

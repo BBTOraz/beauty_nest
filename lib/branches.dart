@@ -2,6 +2,118 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'model/branch_model.dart';
+
+Future<void> importData() async {
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  // Services List
+  final List<ServiceItem> services = [
+    ServiceItem(title: 'Стрижки', imageUrl: 'assets/services/haircut.jpg', price: 1500),
+    ServiceItem(title: 'Окрашивание', imageUrl: 'assets/services/coloring.jpg', price: 3000),
+    ServiceItem(title: 'Укладка', imageUrl: 'assets/services/styling.jpg', price: 1200),
+    ServiceItem(title: 'Химическая завивка', imageUrl: 'assets/services/perm.jpg', price: 2500),
+    ServiceItem(title: 'Восстановительные процедуры', imageUrl: 'assets/services/recovery.jpg', price: 2000),
+    ServiceItem(title: 'Маникюр', imageUrl: 'assets/services/manicure.jpg', price: 1000),
+    ServiceItem(title: 'Педикюр', imageUrl: 'assets/services/pedicure.jpg', price: 1500),
+    ServiceItem(title: 'Дизайн ногтей', imageUrl: 'assets/services/naildesign.jpg', price: 800),
+    ServiceItem(title: 'Чистка лица', imageUrl: 'assets/services/facecleaning.jpg', price: 2000),
+    ServiceItem(title: 'Пилинги', imageUrl: 'assets/services/peeling.jpg', price: 2500),
+    ServiceItem(title: 'Депиляция (восковая)', imageUrl: 'assets/services/waxdepilation.jpg', price: 800),
+    ServiceItem(title: 'Макияж (дневной)', imageUrl: 'assets/services/daymakeup.jpg', price: 1500),
+    ServiceItem(title: 'Макияж (вечерний)', imageUrl: 'assets/services/evenmakeup.jpg', price: 2000),
+    ServiceItem(title: 'Уход за бровями', imageUrl: 'assets/services/browscare.jpg', price: 500),
+  ];
+
+  // Packages List
+  final List<PackageItem> packages = [
+    PackageItem(title: 'Свадебный образ', imageUrl: 'assets/packages/wedding.jpg', price: 15000),
+    PackageItem(title: 'Полный spa-день', imageUrl: 'assets/packages/spaday.jpg', price: 12000),
+    PackageItem(title: 'Преображение', imageUrl: 'assets/packages/transformation.jpg', price: 10000),
+    PackageItem(title: 'Экспресс-уход', imageUrl: 'assets/packages/expresscare.jpg', price: 5000),
+  ];
+
+  // Fetch stylists from Firestore
+  final QuerySnapshot stylistsSnapshot = await firestore.collection('stylists').get();
+  final List<Stylist> allStylists = stylistsSnapshot.docs.map((doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Stylist(
+      firstname: data['firstName'],
+      lastname: data['lastName'],
+      img: data['photo'],
+      rating: data['rating'],
+      commentCount: data['ratingCount'],
+    );
+  }).toList();
+
+  final List<Branch> branches = [
+    Branch(
+      id: 'branch1',
+      name: 'Beauty Nest',
+      location: 'Проспект Кабанбай Батыра 53, Астана',
+      rating: 4.5,
+      priceRange: '3000-51000',
+      mainPhotoUrl: 'assets/branches/branch1.jpg',
+      services: services.sublist(0, 7),
+      packages: packages.sublist(0, 2),
+      stylists: allStylists.sublist(0, 4),
+    ),
+    Branch(
+      id: 'branch2',
+      name: 'Beauty Nest',
+      location: 'Улица Туран 37, Астана',
+      rating: 4.3,
+      priceRange: '3000-51000',
+      mainPhotoUrl: 'assets/branches/branch2.jpg',
+      services: services.sublist(7, 11),
+      packages: packages.sublist(2, 4),
+      stylists: allStylists.sublist(4, 8),
+    ),
+    Branch(
+      id: 'branch3',
+      name: 'Beauty Nest',
+      location: 'Улица Сыганак 14',
+      rating: 4.7,
+      priceRange: '3000-51000',
+      mainPhotoUrl: 'assets/branches/branch3.jpg',
+      services: services.sublist(11),
+      packages: packages,
+      stylists: allStylists.sublist(8),
+    ),
+  ];
+
+  // Import branches to Firestore
+  for (var branch in branches) {
+    await firestore.collection('branches').doc(branch.id).set({
+      'id': branch.id,
+      'name': branch.name,
+      'location': branch.location,
+      'rating': branch.rating,
+      'priceRange': branch.priceRange,
+      'mainPhotoUrl': branch.mainPhotoUrl,
+      'services': services.map((service) => {
+        'title': service.title,
+        'imageUrl': service?.imageUrl,
+        'price': service.price,
+      }).toList(),
+      'packages': packages.map((package) => {
+        'title': package.title,
+        'imageUrl': package.imageUrl,
+        'price': package.price,
+      }).toList(),
+      'stylists': branch.stylists.map((stylist) => {
+        'firstname': stylist.firstname,
+        'lastname': stylist.lastname,
+        'img': stylist.img,
+        'rating': stylist.rating,
+        'commentCount': stylist.commentCount,
+      }).toList(),
+    });
+    print('Imported branch: ${branch.name}');
+  }
+}
+
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -23,188 +135,5 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// Функция для импорта данных в Firestore
-Future<void> importData() async {
-  CollectionReference branches = FirebaseFirestore.instance.collection('branches');
-
-  List<Map<String, dynamic>> branchesData = [
-    {
-      "id": "branch1",
-      "name": "Beauty Nest",
-      "address": "Астана, Казахстан",
-      "averageRating": 4.6,
-      "userRatings": [5, 4, 5, 4, 5],
-      "workingHours": "09:00 - 21:00",
-      "priceRange": "3000-52000тг",
-      "salonPhoto":
-      "assets/branch/branch1.webp", // ссылка на внешний ресурс
-      "employees": [
-        {
-          "firstName": "Айжан",
-          "lastName": "Кумисова",
-          "photo": "assets/workers/1.jpeg",
-          "experience": 5,
-          "gender": "female",
-          "age": 28
-        },
-        {
-          "firstName": "Айым",
-          "lastName": "Оразбаева",
-          "photo": "assets/workers/2.jpg",
-          "experience": 7,
-          "gender": "male",
-          "age": 32
-        },
-        {
-          "firstName": "Алия",
-          "lastName": "Бакылова",
-          "photo": "assets/workers/3.jpg",
-          "experience": 3,
-          "gender": "female",
-          "age": 24
-        }
-      ],
-      "comments": [
-        {
-          "message": "Отличное обслуживание, рекомендую!",
-          "sender": "+770****90",
-          "rating": 5
-        },
-        {
-          "message":
-          "Хороший сервис, но можно улучшить время ожидания.",
-          "sender": "+777****32",
-          "rating": 4
-        },
-        {
-          "message": "Впечатления положительные, уютная атмосфера.",
-          "sender": "+772****78",
-          "rating": 5
-        }
-      ]
-    },
-    {
-      "id": "branch2",
-      "name": "Beauty Nest",
-      "address": "Астана, Казахстан",
-      "averageRating": 4.2,
-      "userRatings": [4, 4, 5, 4, 4],
-      "workingHours": "10:00 - 20:00",
-      "priceRange": "3000-52000тг",
-      "salonPhoto":
-      "assets/branch/branch2.jpg", // ссылка на внешний ресурс
-      "employees": [
-        {
-          "firstName": "Диляра",
-          "lastName": "Ермекова",
-          "photo": "assets/workers/4.jpg",
-          "experience": 4,
-          "gender": "male",
-          "age": 29
-        },
-        {
-          "firstName": "Майра",
-          "lastName": "Сайханова",
-          "photo": "assets/workers/5.jpg",
-          "experience": 6,
-          "gender": "female",
-          "age": 30
-        },
-        {
-          "firstName": "Жанерке",
-          "lastName": "Тлеубаева",
-          "photo": "assets/workers/6.jpeg",
-          "experience": 2,
-          "gender": "male",
-          "age": 26
-        }
-      ],
-      "comments": [
-        {
-          "message":
-          "Профессиональные мастера, сервис на высшем уровне.",
-          "sender": "+777****76",
-          "rating": 5
-        },
-        {
-          "message":
-          "Доволен качеством услуг, но цены немного высоковаты.",
-          "sender": "+770****12",
-          "rating": 4
-        },
-        {
-          "message": "Отличное соотношение цена-качество!",
-          "sender": "+770****34",
-          "rating": 5
-        }
-      ]
-    },
-    {
-      "id": "branch3",
-      "name": "Beauty Nest",
-      "address": "Астана, Казахстан",
-      "averageRating": 4.8,
-      "userRatings": [5, 5, 5, 4, 5],
-      "workingHours": "08:30 - 22:00",
-      "priceRange": "3000-52000тг",
-      "salonPhoto":
-      "assets/branch/branch3.png", // ссылка на внешний ресурс
-      "employees": [
-        {
-          "firstName": "Гульнар",
-          "lastName": "Жумабекова",
-          "photo": "assets/workers/7.jpg",
-          "experience": 8,
-          "gender": "female",
-          "age": 35
-        },
-        {
-          "firstName": "Айгүл",
-          "lastName": "Нуржанова",
-          "photo": "assets/workers/8.jpg",
-          "experience": 10,
-          "gender": "male",
-          "age": 38
-        },
-        {
-          "firstName": "Саида",
-          "lastName": "Абдрахманова",
-          "photo": "assets/workers/9.jpg",
-          "experience": 5,
-          "gender": "female",
-          "age": 29
-        }
-      ],
-      "comments": [
-        {
-          "message": "Очень приятное обслуживание и уютная обстановка.",
-          "sender": "+772****48",
-          "rating": 5
-        },
-        {
-          "message": "Всё понравилось, обязательно вернусь.",
-          "sender": "+777****20",
-          "rating": 5
-        },
-        {
-          "message":
-          "Хороший сервис, но можно добавить больше парковочных мест.",
-          "sender": "+770****63",
-          "rating": 4
-        }
-      ]
-    }
-  ];
-
-  for (var branch in branchesData) {
-    try {
-      await branches.doc(branch['id']).set(branch);
-      print('Филиал ${branch['id']} импортирован успешно.');
-    } catch (e) {
-      print('Ошибка при импорте филиала ${branch['id']}: $e');
-    }
   }
 }

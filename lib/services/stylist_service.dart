@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../model/stylist.dart';
 import '../repositories/stylist_repository.dart';
@@ -30,8 +31,8 @@ class StylistService extends ChangeNotifier {
     }
   }
 
+
   Future<Stylist?> getStylistById(String id) async {
-    // First check if we already have it in the list
     Stylist? stylist = _stylists.firstWhere(
           (stylist) => stylist.id == id,
       orElse: () => Stylist(
@@ -57,3 +58,4 @@ class StylistService extends ChangeNotifier {
     return stylist;
   }
 }
+

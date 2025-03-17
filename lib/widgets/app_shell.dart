@@ -1,13 +1,11 @@
 import 'package:beauty_nest/app_theme.dart';
-import 'package:beauty_nest/model/stylist.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import '../model/stylist.dart';
-import 'custom_top_app_bar.dart';
+import '../views/booking_screen.dart';
 import '../views/main_screen.dart';
 import '../views/stylists_screen.dart';
-import '../views/booking_screen.dart';
-import '../views/offers_screen.dart';
+import 'custom_top_app_bar.dart';
+
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -24,7 +22,6 @@ class _AppShellState extends State<AppShell> {
       const MainScreen(),
       StylistsListScreen(),
       const BookingScreen(),
-      const OffersScreen(),
     ];
   }
 
@@ -47,13 +44,6 @@ class _AppShellState extends State<AppShell> {
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.calendar_today),
         title: "Запись",
-        activeColorPrimary: AppColors.primaryContainer,
-        activeColorSecondary: AppColors.onPrimaryContainer,
-        inactiveColorPrimary: AppColors.onPrimaryContainer,
-      ),
-      PersistentBottomNavBarItem(
-        icon: const Icon(Icons.local_offer),
-        title: "Акции",
         activeColorPrimary: AppColors.primaryContainer,
         activeColorSecondary: AppColors.onPrimaryContainer,
         inactiveColorPrimary: AppColors.onPrimaryContainer,

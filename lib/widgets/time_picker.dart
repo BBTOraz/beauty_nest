@@ -1,4 +1,3 @@
-// Изменённый CustomDateTimePickerModal (lib/widgets/custom_date_time_picker_modal.dart)
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 
@@ -24,111 +23,210 @@ class _CustomDateTimePickerModalState extends State<CustomDateTimePickerModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 350,
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text('Выберите день и время', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: 7,
-                    itemBuilder: (context, index) {
-                      final date = DateTime.now().add(Duration(days: index));
-                      final dayAbbrev = _getDayAbbreviation(date);
-                      final isSelected = date.year == selectedDateTime.year && date.month == selectedDateTime.month && date.day == selectedDateTime.day;
-                      return ListTile(
-                        dense: true,
-                        title: Text(dayAbbrev, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppColors.onPrimaryContainer : Colors.grey), textAlign: TextAlign.center),
-                        subtitle: isSelected ? Text('${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}', textAlign: TextAlign.center) : null,
-                        onTap: () {
-                          setState(() {
-                            selectedDateTime = DateTime(date.year, date.month, date.day, selectedDateTime.hour, selectedDateTime.minute);
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: 40,
-                          controller: FixedExtentScrollController(initialItem: selectedDateTime.hour - 9),
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              final hour = 9 + index;
-                              selectedDateTime = DateTime(selectedDateTime.year, selectedDateTime.month, selectedDateTime.day, hour, selectedDateTime.minute);
-                            });
-                          },
-                          physics: const FixedExtentScrollPhysics(),
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              if (index < 0 || index > 12) return null;
-                              final hour = 9 + index;
-                              return Center(child: Text(hour.toString().padLeft(2, '0')));
-                            },
-                            childCount: 13,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: 40,
-                          controller: FixedExtentScrollController(initialItem: allowedMinutes.indexOf(selectedDateTime.minute)),
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              final minute = allowedMinutes[index];
-                              selectedDateTime = DateTime(selectedDateTime.year, selectedDateTime.month, selectedDateTime.day, selectedDateTime.hour, minute);
-                            });
-                          },
-                          physics: const FixedExtentScrollPhysics(),
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              if (index < 0 || index >= allowedMinutes.length) return null;
-                              final minute = allowedMinutes[index];
-                              return Center(child: Text(minute.toString().padLeft(2, '0')));
-                            },
-                            childCount: allowedMinutes.length,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, selectedDateTime);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.onPrimaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Готово', style: TextStyle(fontSize: 16, color: AppColors.onPrimary)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 20,
+            offset: Offset(0, -5),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              width: 60,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Выберите день и время',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+
+            // Date and Time Selection
+            SizedBox(
+              height: 250,
+              child: Row(
+                children: [
+                  // Date Selection
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(color: Colors.grey.shade200, width: 1),
+                        ),
+                      ),
+                      child: ListView.builder(
+                        itemCount: 7,
+                        itemBuilder: (context, index) {
+                          final date = DateTime.now().add(Duration(days: index));
+                          final dayAbbrev = _getDayAbbreviation(date);
+                          final isSelected = date.year == selectedDateTime.year &&
+                              date.month == selectedDateTime.month &&
+                              date.day == selectedDateTime.day;
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.onPrimaryContainer.withOpacity(0.1) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                              title: Text(
+                                dayAbbrev,
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? AppColors.onPrimaryContainer : Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              subtitle: isSelected
+                                  ? Text(
+                                  '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}',
+                                  style: TextStyle(color: AppColors.onPrimaryContainer),
+                                  textAlign: TextAlign.center
+                              )
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  selectedDateTime = DateTime(date.year, date.month, date.day, selectedDateTime.hour, selectedDateTime.minute);
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Hour and Minute Selection
+                  Expanded(
+                    flex: 3,
+                    child: Row(
+                      children: [
+                        // Hour Picker
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                right: BorderSide(color: Colors.grey.shade200, width: 1),
+                              ),
+                            ),
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 50,
+                              controller: FixedExtentScrollController(initialItem: selectedDateTime.hour - 9),
+                              onSelectedItemChanged: (index) {
+                                setState(() {
+                                  final hour = 9 + index;
+                                  selectedDateTime = DateTime(selectedDateTime.year, selectedDateTime.month, selectedDateTime.day, hour, selectedDateTime.minute);
+                                });
+                              },
+                              physics: const FixedExtentScrollPhysics(),
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                builder: (context, index) {
+                                  if (index < 0 || index > 12) return null;
+                                  final hour = 9 + index;
+                                  return Center(
+                                    child: Text(
+                                      hour.toString().padLeft(2, '0'),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: index == selectedDateTime.hour - 9 ? AppColors.onPrimaryContainer : Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                childCount: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Minute Picker
+                        Expanded(
+                          child: ListWheelScrollView.useDelegate(
+                            itemExtent: 50,
+                            controller: FixedExtentScrollController(initialItem: allowedMinutes.indexOf(selectedDateTime.minute)),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                final minute = allowedMinutes[index];
+                                selectedDateTime = DateTime(selectedDateTime.year, selectedDateTime.month, selectedDateTime.day, selectedDateTime.hour, minute);
+                              });
+                            },
+                            physics: const FixedExtentScrollPhysics(),
+                            childDelegate: ListWheelChildBuilderDelegate(
+                              builder: (context, index) {
+                                if (index < 0 || index >= allowedMinutes.length) return null;
+                                final minute = allowedMinutes[index];
+                                return Center(
+                                  child: Text(
+                                    minute.toString().padLeft(2, '0'),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: index == allowedMinutes.indexOf(selectedDateTime.minute) ? AppColors.onPrimaryContainer : Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: allowedMinutes.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Confirm Button
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, selectedDateTime);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.onPrimaryContainer,
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 4,
+                ),
+                child: Text(
+                  'Готово',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

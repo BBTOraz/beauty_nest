@@ -3,6 +3,7 @@ import 'package:beauty_nest/repositories/stylist_repository.dart';
 import 'package:beauty_nest/services/stylist_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'app_theme.dart';
 import 'service_locator.dart';
@@ -12,6 +13,7 @@ import 'routes/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ru_RU', null);
   await Firebase.initializeApp();
   setupServiceLocator();
   runApp(

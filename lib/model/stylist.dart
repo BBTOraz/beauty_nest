@@ -11,7 +11,7 @@ class Stylist {
   final String quote;
   final String specialization;
   final String address;
-  final List<Comment> comments;
+  late final List<Comment> comments;
 
   final bool? isAvailable;
   final List<Service> services;
@@ -136,11 +136,11 @@ class Comment {
     return Comment(
       id: data['id'] ?? '',
       text: data['text'] ?? '',
-      likes: data['likes'] ?? 0,
+      likes: (data['likes'] as num?)?.round() ?? 0,
       userId: data['userId'] ?? '',
       photo: data['photo'] ?? '',
       name: data['name'] ?? '',
-      ratingCount: data['ratingCount'] ?? 0,
+      ratingCount: (data['ratingCount'] as num?)?.round() ?? 0,
       date: data['date'] != null ? DateTime.parse(data['date']) : DateTime.now(),
       isLiked: data['isLiked'] ?? false,
     );

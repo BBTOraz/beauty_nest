@@ -1,46 +1,79 @@
-import 'package:beauty_nest/viewmodels/booking_view_model.dart';
+import 'package:beauty_nest/app_theme.dart';
+import 'package:beauty_nest/model/expert_model.dart';
+import 'package:beauty_nest/views/booking_flow_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../app_theme.dart';
-import '../model/expert_model.dart';
-import '../views/booking_flow_screen.dart';
-
 
 class ProCareListWidget extends StatelessWidget {
   const ProCareListWidget({super.key});
 
+  Future<List<Expert>> _fetchExperts() async {
+    final querySnapshot = await FirebaseFirestore.instance.collection('stylists').get();
+    final experts = querySnapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final firstName = data['firstName'] ?? '';
+      final lastName = data['lastName'] ?? '';
+      return Expert(
+        name: '$firstName $lastName',
+        // Опыт выводим с единицей измерения (например, "15 лет")
+        experienceRange: '${data['experience'] ?? 0} лет',
+        // Используем специализацию как информационное поле
+        info: data['specialization'] ?? '',
+        // Приводим рейтинг к double и округляем при выводе
+        rating: (data['rating'] as num?)?.toDouble() ?? 0.0,
+        photoUrl: data['photo'] ?? '',
+      );
+    }).toList();
+    return experts;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Expert> experts = BookingViewModel.experts;
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Стилисты на дом',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+    return FutureBuilder<List<Expert>>(
+      future: _fetchExperts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 210,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Ошибка загрузки: ${snapshot.error}'));
+        }
+        final experts = snapshot.data ?? [];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'Стилисты на дом',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 210,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: experts.length,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                final expert = experts[index];
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8),
-                  child: ProCareHorizontalCard(expert: expert),
-                );
-              },
+            SizedBox(
+              height: 210,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: experts.length,
+                physics: const BouncingScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final expert = experts[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8, right: 8),
+                    child: ProCareHorizontalCard(expert: expert),
+                  );
+                },
+              ),
             ),
-          ),
-        ]
+          ],
+        );
+      },
     );
   }
 }
@@ -56,7 +89,7 @@ class ProCareHorizontalCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BookingFlowScreen(selectedExpert: expert,),
+            builder: (context) => BookingFlowScreen(selectedExpert: expert),
           ),
         );
       },
@@ -87,7 +120,7 @@ class ProCareHorizontalCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              // Дополнительная информация (тусклый серый)
+              // Дополнительная информация (например, специализация)
               Text(
                 expert.info,
                 style: TextStyle(
@@ -116,8 +149,9 @@ class ProCareHorizontalCard extends StatelessWidget {
                         color: Colors.amberAccent,
                       ),
                       const SizedBox(width: 4),
+                      // Округляем рейтинг до 2 знаков после запятой
                       Text(
-                        expert.rating.toString(),
+                        expert.rating.toStringAsFixed(2),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textPrimary,

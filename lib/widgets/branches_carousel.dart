@@ -1,23 +1,76 @@
-import 'package:beauty_nest/views/branch_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:m3_carousel/m3_carousel.dart';
 import '../app_theme.dart';
 import '../model/branch_model.dart';
+import '../views/branch_detail_screen.dart';
 
-class BranchItem {
-  final String image;
-  final String address;
-  const BranchItem({required this.image, required this.address});
-}
-
-class BranchesCarouselWidget extends StatelessWidget {
+class BranchesCarouselWidget extends StatefulWidget {
   const BranchesCarouselWidget({super.key});
 
-  static const List<BranchItem> branches = [
-    BranchItem(image: 'assets/branch/branch1.webp', address: 'ул. Центральная, 1'),
-    BranchItem(image: 'assets/branch/branch2.jpg', address: 'пр-т Мира, 12'),
-    BranchItem(image: 'assets/branch/branch3.png', address: 'ул. Ленина, 5'),
-  ];
+  @override
+  _BranchesCarouselWidgetState createState() => _BranchesCarouselWidgetState();
+}
+
+class _BranchesCarouselWidgetState extends State<BranchesCarouselWidget> {
+  List<Branch> branches = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBranches();
+  }
+
+  Future<void> _fetchBranches() async {
+    try {
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+      final QuerySnapshot branchesSnapshot = await firestore.collection('branches').get();
+
+      setState(() {
+        branches = branchesSnapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return Branch(
+            id: doc.id,
+            name: data['name'],
+            location: data['location'],
+            rating: (data['rating'] as num).toDouble(),
+            priceRange: data['priceRange'],
+            mainPhotoUrl: data['mainPhotoUrl'],
+            services: (data['services'] as List)
+                .map((service) => ServiceItem(
+              title: service['title'],
+              imageUrl: service['imageUrl'],
+              price: (service['price'] as num).toDouble(),
+            ))
+                .toList(),
+            packages: (data['packages'] as List)
+                .map((package) => PackageItem(
+              title: package['title'],
+              imageUrl: package['imageUrl'],
+              price: double.parse(package['price']),
+            ))
+                .toList(),
+            stylists: (data['stylists'] as List)
+                .map((stylist) => Stylist(
+              firstname: stylist['firstname'],
+              lastname: stylist['lastname'],
+              img: stylist['img'],
+              rating: (stylist['rating'] as num).toDouble(),
+              commentCount: stylist['commentCount'],
+            ))
+                .toList(),
+          );
+        }).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching branches: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,61 +88,40 @@ class BranchesCarouselWidget extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(
-          height: 250,
-          child: M3Carousel(
-            type: "uncontained",
-            freeScroll: false,
-            uncontainedItemExtent: 380,
-            uncontainedShrinkExtent: 180,
-            childElementBorderRadius: 16,
-            onTap: (int index) {
-              final item = branches[index];
-              final branch = Branch(
-                id: 'branch_$index',
-                name: 'Beauty Nest',
-                location: item.address,
-                rating: 4.9,
-                priceRange: '100 - 220₸',
-                mainPhotoUrl: item.image,
-                services: [
-                  ServiceItem(
-                    title: 'Deep Cleansing Facial',
-                    imageUrl: 'assets/services/facial.jpg',
-                    price: 89,
+        if (isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (branches.isEmpty)
+          const Center(child: Text('Нет доступных филиалов'))
+        else
+          SizedBox(
+            height: 250,
+            child: M3Carousel(
+              type: "uncontained",
+              freeScroll: false,
+              uncontainedItemExtent: 380,
+              uncontainedShrinkExtent: 180,
+              childElementBorderRadius: 16,
+              onTap: (int index) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BranchDetailScreen(branch: branches[index]),
                   ),
-                  ServiceItem(
-                    title: 'Anti-Aging Treatment',
-                    imageUrl: 'assets/services/anti_aging.jpg',
-                    price: 99,
-                  ),
-                  ServiceItem(
-                    title: 'Nail Art',
-                    imageUrl: 'assets/services/nail_art.jpg',
-                    price: 75,
-                  ),
-                ],
-              );
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BranchDetailScreen(branch: branch),
-                ),
-              );
-            },
-            children: branches
-                .map((branch) => _BranchCard(item: branch))
-                .toList(),
+                );
+              },
+              children: branches
+                  .map((branch) => _BranchCard(branch: branch))
+                  .toList(),
+            ),
           ),
-        ),
       ],
     );
   }
 }
 
 class _BranchCard extends StatelessWidget {
-  final BranchItem item;
-  const _BranchCard({super.key, required this.item});
+  final Branch branch;
+  const _BranchCard({super.key, required this.branch});
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +134,10 @@ class _BranchCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            item.image,
+            branch.mainPhotoUrl,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+            const Center(child: Icon(Icons.error_outline)),
           ),
           Container(
             color: AppColors.overlay,
@@ -126,7 +160,7 @@ class _BranchCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    item.address,
+                    branch.location,
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textPrimary,

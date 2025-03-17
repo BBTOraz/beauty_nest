@@ -8,6 +8,8 @@ class UserModel {
   final String city;
   final String phone;
   final String address;
+  final List<dynamic> atHome;
+  final List<dynamic> booking;
 
   UserModel({
     required this.uid,
@@ -17,6 +19,8 @@ class UserModel {
     required this.city,
     required this.phone,
     required this.address,
+    this.atHome = const [],
+    this.booking = const [],
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -29,8 +33,11 @@ class UserModel {
       city: data['city'] ?? '',
       phone: data['phone'] ?? '',
       address: data['address'] ?? '',
+      atHome: data['atHome'] is List ? List.from(data['atHome']) : [],
+      booking: data['bookings'] is List ? List.from(data['bookings']) : [],
     );
   }
+
 
   Map<String, dynamic> toMap() {
     return {
@@ -40,6 +47,8 @@ class UserModel {
       'city': city,
       'phone': phone,
       'address': address,
+      'atHome': atHome,
+      'booking': booking,
     };
   }
 }

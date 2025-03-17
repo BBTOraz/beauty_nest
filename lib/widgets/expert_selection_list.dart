@@ -1,10 +1,9 @@
-import 'package:beauty_nest/widgets/time_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_theme.dart';
 import '../model/expert_model.dart';
 import '../viewmodels/booking_view_model.dart';
-
+import 'package:beauty_nest/widgets/time_picker.dart'; // Если используется
 
 class ExpertSelectionList extends StatelessWidget {
   final VoidCallback? onExpertSelected;
@@ -13,7 +12,10 @@ class ExpertSelectionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bookingVM = Provider.of<BookingViewModel>(context);
-    final experts = BookingViewModel.experts;
+    final experts = Provider.of<BookingViewModel>(context).experts;
+    if (experts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return SizedBox(
       height: 210,
       child: ListView.builder(
@@ -49,7 +51,6 @@ class ExpertSelectionList extends StatelessWidget {
                   }
                 });
               },
-
               child: ExpertCard(
                 expert: expert,
                 isSelected: isSelected,
@@ -76,61 +77,61 @@ class ExpertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 4,
+          child: Container(
+            width: 140,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: AssetImage(expert.photoUrl),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  expert.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  expert.experienceRange,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
-            elevation: 4,
+          ),
+        ),
+        if (isSelected)
+          Positioned(
+            top: 8,
+            right: 8,
             child: Container(
-              width: 140,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage(expert.photoUrl),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    expert.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    expert.experienceRange,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.onPrimaryContainer, width: 2),
+                color: AppColors.onPrimaryContainer,
+              ),
+              padding: const EdgeInsets.all(4),
+              child: const Icon(
+                Icons.check,
+                size: 16,
+                color: AppColors.onPrimary,
               ),
             ),
           ),
-          if (isSelected)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.onPrimaryContainer, width: 2),
-                  color: AppColors.onPrimaryContainer,
-                ),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(
-                  Icons.check,
-                  size: 16,
-                  color: AppColors.onPrimary,
-                ),
-              ),
-            ),
-        ],
+      ],
     );
   }
 }

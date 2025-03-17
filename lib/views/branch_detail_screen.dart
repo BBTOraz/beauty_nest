@@ -192,10 +192,10 @@ class _PackageTab extends StatelessWidget {
             crossAxisSpacing: 12,
             childAspectRatio: 0.75,
           ),
-          itemCount: branch.services.length,
+          itemCount: branch.packages.length,
           itemBuilder: (context, index) {
-            return _ServiceCard(
-              service: branch.services[index],
+            return _PackageCard(
+              packageItem: branch.packages[index],
               isSelected: vm.selectedPackageIndices.contains(index),
               onTap: () => vm.togglePackageSelection(index),
             );
@@ -206,15 +206,66 @@ class _PackageTab extends StatelessWidget {
   }
 }
 
+class _PackageCard extends StatelessWidget {
+  final PackageItem packageItem;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _PackageCard({super.key, required this.packageItem, required this.isSelected, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  child: Image.asset(packageItem.imageUrl, fit: BoxFit.cover, width: double.infinity),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(packageItem.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 8),
+                child: Text('${packageItem.price} тг', style: const TextStyle(color: Colors.grey)),
+              ),
+            ],
+          ),
+          Center(
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.onPrimaryContainer : Colors.white.withOpacity(0.8),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
+                ),
+                child: Center(
+                  child: Icon(isSelected ? Icons.check : Icons.add, color: isSelected ? AppColors.onPrimary : AppColors.primary),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SpecialistTab extends StatelessWidget {
   const _SpecialistTab({super.key});
   @override
   Widget build(BuildContext context) {
-    final specialists = [
-      {'name': 'Bella Grace', 'rating': 4.9, 'comments': 12, 'photo': 'assets/workers/10.jpg'},
-      {'name': 'Daisy Scarlett', 'rating': 4.8, 'comments': 8, 'photo': 'assets/workers/11.jpg'},
-      {'name': 'Alice Blue', 'rating': 4.7, 'comments': 15, 'photo': 'assets/workers/12.jpg'},
-    ];
+    final vm = Provider.of<BranchDetailViewModel>(context);
+    final specialists = vm.branch.stylists;
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -226,17 +277,17 @@ class _SpecialistTab extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 3,
           child: ListTile(
-            leading: CircleAvatar(backgroundImage: AssetImage(spec['photo']! as String)),
-            title: Text(spec['name']!.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            leading: CircleAvatar(backgroundImage: AssetImage(spec.img)),
+            title: Text('${spec.firstname} ${spec.lastname}', style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Row(
               children: [
                 const Icon(Icons.star, size: 16, color: Colors.amber),
                 const SizedBox(width: 4),
-                Text(spec['rating'].toString()),
+                Text(spec.rating.toStringAsFixed(2)),
                 const SizedBox(width: 16),
                 const Icon(Icons.comment, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(spec['comments'].toString()),
+                Text(spec.commentCount.toString()),
               ],
             ),
             onTap: () {},

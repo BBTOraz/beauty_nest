@@ -14,15 +14,15 @@ class SelectedServicesScreen extends StatelessWidget {
       total += branch.services[index].price;
     }
     for (int index in selectedPackages) {
-      total += branch.services[index].price;
+      total += branch.packages[index].price;
     }
     return total;
   }
   @override
   Widget build(BuildContext context) {
-    final selectedItems = [
+    final List<ItemBase> selectedItems = [
       ...selectedServices.map((i) => branch.services[i]),
-      ...selectedPackages.map((i) => branch.services[i]),
+      ...selectedPackages.map((i) => branch.packages[i]),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Выбранные услуги'), backgroundColor: AppColors.primary),
